@@ -2,7 +2,7 @@ import socket
 import logging
 from threading import Thread
 
-from .message import HTTPRequest, parse_message
+from .models import HTTPRequest, parse_message
 
 
 class Webserver:

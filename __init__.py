@@ -2,7 +2,7 @@ import logging
 import os
 
 from .server import Webserver
-from .message import HTTPRequest, parse_message, HTTPResponse
+from .models import HTTPRequest, HTTPResponse
 
 
 logging.basicConfig(level=logging.INFO, format="[%(asctime)s] [%(levelname)s] [%(name)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
@@ -13,6 +13,21 @@ status_messages = {
     404: "Not Found",
     405: "Method Not Allowed",
 }
+    
+    
+def parse_message(message: bytes) -> HTTPResponse:
+    """Parse HTTP message."""
+    lines = message.split(b"\r\n")
+    method, path, version = [line.decode().strip("\r\n") for line in lines[0].split(b" ")]
+    headers = {}
+    body = b""
+    for line in lines[1:]:
+        if line == b"":
+            body = lines[-1]
+            break
+        key, value = line.split(b": ")
+        headers[key] = value
+    return HTTPRequest(method, path, version, headers, body)
 
 
 def build_response(status_code: int, headers: dict = None, body: bytes = None) -> bytes:
