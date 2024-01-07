@@ -1,8 +1,7 @@
 import logging
 import os
 
-from .server import Webserver
-from .models import HTTPRequest, HTTPResponse
+from core import HTTPRequest, HTTPResponse
 
 
 logging.basicConfig(level=logging.INFO, format="[%(asctime)s] [%(levelname)s] [%(name)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
@@ -15,7 +14,7 @@ status_messages = {
 }
     
     
-def parse_message(message: bytes) -> HTTPResponse:
+def parse_message(message: bytes) -> HTTPRequest:
     """Parse HTTP message."""
     lines = message.split(b"\r\n")
     method, path, version = [line.decode().strip("\r\n") for line in lines[0].split(b" ")]
@@ -30,7 +29,7 @@ def parse_message(message: bytes) -> HTTPResponse:
     return HTTPRequest(method, path, version, headers, body)
 
 
-def build_response(status_code: int, headers: dict = None, body: bytes = None) -> bytes:
+def build_response(status_code: int, headers: dict = {}, body: bytes | str = None) -> bytes:
     """Builds a HTTP response.
 
     Args:
@@ -41,13 +40,15 @@ def build_response(status_code: int, headers: dict = None, body: bytes = None) -
     Returns:
         bytes: HTTP response
     """
-    headers = headers or {}
+    if isinstance(body, str):
+        body = body.encode()
+    headers = dict(headers, **{"Content-Length": len(body), "Server": "Webserver"})
     body = body or ""
     msg = HTTPResponse(status_code, status_messages[status_code], headers, body)
-    return msg
+    return bytes(msg)
 
 
-def load_page(path: str) -> str:
+def load_page(path: str) -> bytes:
     """Loads the HTML data from a file from the `html` folder.
 
     Args:
@@ -60,6 +61,6 @@ def load_page(path: str) -> str:
     try:
         with open(f"{html_path}/{path}", "r") as f:
             logging.debug(f"Loading page ../html/{path}")
-            return build_response(200, {"Content-Type": "text/html"}, f.read())
+            return build_response(status_code=200, headers={"Content-Type": "text/html"}, body=f.read())
     except FileNotFoundError:
         return build_response(404)
