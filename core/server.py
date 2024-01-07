@@ -2,7 +2,7 @@ import socket
 import logging
 from threading import Thread
 
-from .models import HTTPRequest, parse_message
+from . import HTTPRequest, parse_message
 
 
 class Webserver:
@@ -14,7 +14,6 @@ class Webserver:
         self.server_socket = None
         self.connected_clients = []
         self._routes = {}
-        self._default_msg_start = "HTTP/1.1 200 OK\r\n\r\n"
         self.config = {}
 
     def run(self, host: str = "localhost", port: int = 8000) -> None:
