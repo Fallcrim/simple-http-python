@@ -2,7 +2,8 @@ import socket
 import logging
 from threading import Thread
 
-from . import HTTPRequest, parse_message
+from utils import parse_message, build_response
+from core import HTTPRequest
 
 
 class Webserver:
@@ -23,7 +24,7 @@ class Webserver:
             host (str): host to run on
             port (int): port to run on
         """
-        self.server_socket = socket.create_server((host, port), reuse_port=True)
+        self.server_socket: socket.socket = socket.create_server((host, port), reuse_port=True)
         self.server_socket.listen()
         self.logger.info(f"Listening on {host}:{port}")
         self.handle_requests()
@@ -54,7 +55,7 @@ class Webserver:
         if not request:
             return
         try:
-            message: HTTPRequest = parse_message(request)
+            message: HTTPRequest = parse_message(request, client_socket, client_address)
             if message.method not in self._routes[message.path]["methods"]:
                 logger.error(f"Method {message.method} not allowed for {message.path}")
                 client_socket.send(b"HTTP/1.1 405 Method Not Allowed\r\n\r\n")
@@ -62,6 +63,8 @@ class Webserver:
                 return
 
             ret = self._routes[message.path]["callback"](message)
+            if isinstance(ret, str):
+                ret = build_response(200, body=ret)
 
             if not (ret.headers and ret.body):
                 response = f"HTTP/1.1 {ret.status_code} {ret.status_reason}\r\n\r\n"

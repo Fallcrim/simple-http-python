@@ -9,6 +9,7 @@ class HTTPRequest:
     version: str
     headers: dict
     body: bytes
+    source: tuple = None
 
 
 @dataclass

@@ -1,17 +1,21 @@
 import os
 import logging
+import socket
 
 from core import HTTPRequest, HTTPResponse
 
 
 status_messages = {
     200: "OK",
+    403: "Forbidden",
     404: "Not Found",
     405: "Method Not Allowed",
+    500: "Internal Server Error",
+    501: "Not Implemented",
 }
 
 
-def parse_message(message: bytes) -> HTTPRequest:
+def parse_message(message: bytes, sender: socket.socket, sender_addr: tuple) -> HTTPRequest:
     """Parse HTTP message."""
     lines = message.split(b"\r\n")
     method, path, version = [line.decode().strip("\r\n") for line in lines[0].split(b" ")]
@@ -23,10 +27,10 @@ def parse_message(message: bytes) -> HTTPRequest:
             break
         key, value = line.split(b": ")
         headers[key] = value
-    return HTTPRequest(method, path, version, headers, body)
+    return HTTPRequest(method, path, version, headers, body, (sender, sender_addr))
 
 
-def build_response(status_code: int, headers: dict = {}, body: bytes | str = None) -> bytes:
+def build_response(status_code: int, headers = None, body: bytes | str = None) -> bytes:
     """Builds a HTTP response.
 
     Args:
@@ -37,6 +41,10 @@ def build_response(status_code: int, headers: dict = {}, body: bytes | str = Non
     Returns:
         bytes: HTTP response
     """
+    if headers is None:
+        headers = dict()
+    if headers is None:
+        headers = {}
     if isinstance(body, str):
         body = body.encode()
     headers = dict(headers, **{"Content-Length": len(body), "Server": "Webserver"})
