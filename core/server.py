@@ -1,6 +1,7 @@
 import socket
 import logging
 from threading import Thread
+from core.models import HTTPResponse
 
 from utils import parse_message, build_response
 from core import HTTPRequest
@@ -64,16 +65,13 @@ class Webserver:
 
             ret = self._routes[message.path]["callback"](message)
             if isinstance(ret, str):
-                ret = build_response(200, body=ret)
-
-            if not (ret.headers and ret.body):
-                response = f"HTTP/1.1 {ret.status_code} {ret.status_reason}\r\n\r\n"
+                response = build_response(200, body=ret)
+            elif isinstance(ret, bytes):
+                response = ret
             else:
-                response = f"HTTP/1.1 {ret.status_code} {ret.status_reason}\r\n{ret.headers if ret.headers else ''}\r\n\r\n{ret.body if ret.body else ''}"
+                response = build_response(**ret.__dict__)
 
-            logger.debug(f"Sending response to {client_address}")
-            logger.debug(response.encode())
-            client_socket.send(response.encode())
+            client_socket.send(response)
             client_socket.close()
 
         except ValueError:

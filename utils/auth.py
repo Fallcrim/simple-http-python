@@ -39,10 +39,17 @@ def create_user(username: str, password: str) -> bytes:
     """
     conn = sqlite3.connect("users.db")
     c = conn.cursor()
+
     new_token = uuid.uuid4()
-    c.execute("INSERT INTO `system_users` VALUES (?, ?, ?)", (username, password, new_token))
+    password = hash_password(password)
+
+    c.execute(
+        "INSERT INTO `system_users` VALUES (?, ?, ?)", (username, password, new_token)
+    )
     conn.commit()
-    return build_response(200, headers={"Set-Cookie": f"token={new_token}"})
+    return build_response(200, headers={
+        "Set-Cookie": f"token={new_token}",
+        "Location": "/dashboard"})
 
 
 def auth_user(username: str, password: str) -> bool:
@@ -70,7 +77,9 @@ def auth_required() -> callable:
             if not args[0].headers.get(b"Authorization"):
                 return b"HTTP/1.1 401 Unauthorized\r\n\r\n"
             return func(*args, **kwargs)
+
         return wrapper
+
     return decorator
 
 

@@ -7,6 +7,7 @@ from core import HTTPRequest, HTTPResponse
 
 status_messages = {
     200: "OK",
+    301: "Moved Permanently",
     403: "Forbidden",
     404: "Not Found",
     405: "Method Not Allowed",
@@ -30,7 +31,7 @@ def parse_message(message: bytes, sender: socket.socket, sender_addr: tuple) -> 
     return HTTPRequest(method, path, version, headers, body, (sender, sender_addr))
 
 
-def build_response(status_code: int, headers = None, body: bytes | str = None) -> bytes:
+def build_response(status_code: int, headers: dict = None, body: bytes | str = "") -> bytes:
     """Builds a HTTP response.
 
     Args:
@@ -43,12 +44,7 @@ def build_response(status_code: int, headers = None, body: bytes | str = None) -
     """
     if headers is None:
         headers = dict()
-    if headers is None:
-        headers = {}
-    if isinstance(body, str):
-        body = body.encode()
     headers = dict(headers, **{"Content-Length": len(body), "Server": "Webserver"})
-    body = body or ""
     msg = HTTPResponse(status_code, status_messages[status_code], headers, body)
     return bytes(msg)
 
@@ -69,3 +65,15 @@ def load_page(path: str) -> bytes:
             return build_response(status_code=200, headers={"Content-Type": "text/html"}, body=f.read())
     except FileNotFoundError:
         return build_response(404)
+    
+
+def redirect(location: str) -> bytes:
+    """Redirects to a location.
+
+    Args:
+        location (str): Location to redirect to
+
+    Returns:
+        bytes: HTTP response
+    """
+    return build_response(301, headers={"Location": location})
