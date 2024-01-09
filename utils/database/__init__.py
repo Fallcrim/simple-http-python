@@ -21,3 +21,15 @@ class Database:
         """
         self.c.execute("CREATE TABLE IF NOT EXISTS `?` (?)", (table_name, ", ".join(columns)))
         self.conn.commit()
+
+    def validate_token(self, token: str) -> bool:
+        """Validate a token.
+
+        Args:
+            token (str): Token to validate
+
+        Returns:
+            bool: True if token is valid, False otherwise
+        """
+        self.c.execute("SELECT * FROM `system_users` WHERE `token`=?", (token,))
+        return self.c.fetchone() is not None

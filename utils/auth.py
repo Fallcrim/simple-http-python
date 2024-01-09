@@ -3,6 +3,7 @@ import hashlib
 import uuid
 
 from . import build_response
+from utils.database import Database
 
 
 def compare_passwords(password: str, hashed_password: str) -> bool:
@@ -71,17 +72,16 @@ def auth_user(username: str, password: str) -> bool:
     return False
 
 
-def auth_required() -> callable:
+def protected() -> callable:
     def decorator(func: callable) -> callable:
         def wrapper(*args, **kwargs):
-            if not args[0].headers.get(b"Authorization"):
+            if not args[0].cookies.get(b"token"):
                 return b"HTTP/1.1 401 Unauthorized\r\n\r\n"
+            db = Database("users.db")
+            if not db.validate_token(args[0].cookies[b"token"]):
+                return b"HTTP/1.1 403 Forbidden\r\n\r\n"
             return func(*args, **kwargs)
 
         return wrapper
 
     return decorator
-
-
-def protected() -> callable:
-    pass  # TODO: Add protected route decorator

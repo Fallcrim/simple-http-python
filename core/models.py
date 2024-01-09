@@ -4,18 +4,19 @@ import logging
 
 @dataclass
 class HTTPRequest:
-    """HTTP Message."""
+    """HTTP Request model."""
     method: str
     path: str
     version: str
     headers: dict
     body: bytes
     source: tuple = None
+    cookies: dict = None
 
 
 @dataclass
 class HTTPResponse:
-    """HTTP Response."""
+    """HTTP Response model."""
     status_code: int
     status_reason: str
     headers: dict

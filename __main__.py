@@ -11,6 +11,7 @@ def index(request: HTTPRequest):
     return load_page("index.html")
 
 @server.route("/test-protected", allowed_methods=["GET"])
+@protected
 def test_protected(request: HTTPRequest):
     server.logger.debug("Test protected called")
     return "<h1>This is a protected page</h1>"

@@ -28,7 +28,10 @@ def parse_message(message: bytes, sender: socket.socket, sender_addr: tuple) -> 
             break
         key, value = line.split(b": ")
         headers[key] = value
-    return HTTPRequest(method, path, version, headers, body, (sender, sender_addr))
+    cookies = {cookie: value for cookie, value in headers.items() if value is not None and cookie.lower() == "cookie"}
+    for cookie in cookies:
+        headers.pop(cookie)
+    return HTTPRequest(method, path, version, headers, body, (sender, sender_addr), cookies)
 
 
 def build_response(status_code: int, headers: dict = None, body: bytes | str = "") -> bytes:
