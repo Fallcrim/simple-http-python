@@ -166,3 +166,4 @@ html/
 
 # Database files
 *.db
+*.db-journal
