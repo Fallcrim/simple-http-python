@@ -11,7 +11,6 @@ class HTTPRequest:
     headers: dict
     body: bytes
     source: tuple = None
-    cookies: dict = None
 
 
 @dataclass

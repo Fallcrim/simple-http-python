@@ -28,10 +28,7 @@ def parse_message(message: bytes, sender: socket.socket, sender_addr: tuple) -> 
             break
         key, value = line.split(b": ")
         headers[key] = value
-    cookies = {cookie: value for cookie, value in headers.items() if value is not None and cookie.lower() == "cookie"}
-    for cookie in cookies:
-        headers.pop(cookie)
-    return HTTPRequest(method, path, version, headers, body, (sender, sender_addr), cookies)
+    return HTTPRequest(method, path, version, headers, body, (sender, sender_addr))
 
 
 def build_response(status_code: int, headers: dict = None, body: bytes | str = "") -> bytes:
@@ -80,3 +77,29 @@ def redirect(location: str) -> bytes:
         bytes: HTTP response
     """
     return build_response(301, headers={"Location": location})
+
+
+def parse_parameters(parameters: str | bytes) -> dict:
+    """Parse parameters from a string or bytes.
+
+    Args:
+        parameters (str | bytes): Parameters to parse
+
+    Returns:
+        dict: Parameters
+    """
+    if isinstance(parameters, bytes):
+        parameters = parameters.decode()
+    return {parameter.split("=")[0]: parameter.split("=")[1] for parameter in parameters.split("&")}
+
+
+def get_cookies(headers: dict) -> dict:
+    """Parse cookies from headers.
+
+    Args:
+        headers (dict): HTTP headers
+
+    Returns:
+        dict: Cookies
+    """
+    return {cookie.decode().split("=")[0]: cookie.decode().split("=")[1] for cookie in headers.get(b"Cookie", b"").split(b";") if cookie != b""}

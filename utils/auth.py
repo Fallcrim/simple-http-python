@@ -4,6 +4,7 @@ import uuid
 
 from . import build_response
 from utils.database import Database
+from utils import get_cookies
 
 
 def compare_passwords(password: str, hashed_password: str) -> bool:
@@ -45,12 +46,12 @@ def create_user(username: str, password: str) -> bytes:
     password = hash_password(password)
 
     c.execute(
-        "INSERT INTO `system_users` VALUES (?, ?, ?)", (username, password, new_token)
+        "INSERT INTO `system_users` VALUES (?, ?, ?)", (username, password, new_token.hex)
     )
     conn.commit()
     return build_response(200, headers={
         "Set-Cookie": f"token={new_token}",
-        "Location": "/dashboard"})
+        "Location": "/"})
 
 
 def auth_user(username: str, password: str) -> bool:
@@ -75,11 +76,13 @@ def auth_user(username: str, password: str) -> bool:
 def protected() -> callable:
     def decorator(func: callable) -> callable:
         def wrapper(*args, **kwargs):
-            if not args[0].cookies.get(b"token"):
+            cookies = get_cookies(args[0].headers)
+            if cookies.get('token'):
+                db = Database("users.db")
+                if not db.validate_token(cookies["token"]):
+                    return b"HTTP/1.1 403 Forbidden\r\n\r\n"
+            else:
                 return b"HTTP/1.1 401 Unauthorized\r\n\r\n"
-            db = Database("users.db")
-            if not db.validate_token(args[0].cookies[b"token"]):
-                return b"HTTP/1.1 403 Forbidden\r\n\r\n"
             return func(*args, **kwargs)
 
         return wrapper

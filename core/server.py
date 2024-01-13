@@ -25,7 +25,7 @@ class Webserver:
             host (str): host to run on
             port (int): port to run on
         """
-        self.server_socket: socket.socket = socket.create_server((host, port), reuse_port=True)
+        self.server_socket: socket.socket = socket.create_server((host, port))
         self.server_socket.listen()
         self.logger.info(f"Listening on {host}:{port}")
         self.handle_requests()
