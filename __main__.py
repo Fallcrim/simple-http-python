@@ -1,8 +1,8 @@
 import json
 
 from core import Webserver, HTTPRequest
-from utils import load_page, redirect, parse_parameters
-from utils.auth import create_user, protected
+from utils import load_page, redirect, parse_parameters, get_cookies
+from utils.auth import create_user, protected, auth_user, deauth_user
 from utils.database import Database
 
 server = Webserver()
@@ -27,12 +27,31 @@ def test_redirect(request: HTTPRequest):
 
 
 @server.route("/signup", allowed_methods=["GET", "POST"])
-def register(request: HTTPRequest):
+def signup(request: HTTPRequest):
     if request.method == "GET":
-        if request.cookies.get("token"):
-            return redirect("/dashboard")
+        if get_cookies(request.headers).get("token"):
+            return redirect("/")
         return load_page("signup.html")
     elif request.method == "POST":
         return create_user(*parse_parameters(request.body).values())
+
+
+@server.route("/login", allowed_methods=["GET", "POST"])
+def login(request: HTTPRequest):
+    if request.method == "GET":
+        if get_cookies(request.headers).get("token"):
+            return redirect("/test-protected")
+        return load_page("login.html")
+    elif request.method == "POST":
+        parameters = parse_parameters(request.body)
+        if auth_user(parameters["username"], parameters["password"]):
+            return redirect("/")
+        else:
+            return redirect("/login")
+
+
+@server.route("/logout", allowed_methods=["GET"])
+def logout(request: HTTPRequest):
+    return deauth_user()
 
 server.run("localhost", 8080)

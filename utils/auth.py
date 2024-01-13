@@ -4,7 +4,7 @@ import uuid
 
 from . import build_response
 from utils.database import Database
-from utils import get_cookies
+from utils import get_cookies, build_response
 
 
 def compare_passwords(password: str, hashed_password: str) -> bool:
@@ -54,7 +54,7 @@ def create_user(username: str, password: str) -> bytes:
         "Location": "/"})
 
 
-def auth_user(username: str, password: str) -> bool:
+def auth_user(username: str, password: str) -> bytes:
     """Authenticate a user.
 
     Args:
@@ -62,15 +62,18 @@ def auth_user(username: str, password: str) -> bool:
         password (str): Password
 
     Returns:
-        bool: True if user is authenticated, False otherwise
+        bytes: Corresponding HTTP response
     """
     conn = sqlite3.connect("users.db")
     c = conn.cursor()
-    c.execute("SELECT * FROM `system_users` WHERE username=`?`", (username, password))
-    if c.fetchone():
-        if compare_passwords(password, c.fetchone()[1]):
-            return True
-    return False
+    c.execute("SELECT * FROM `system_users` WHERE username=?", (username,))
+    result = c.fetchone()
+    if result:
+        if compare_passwords(password, result[1]):
+            new_token = uuid.uuid4().hex
+            c.execute("UPDATE `system_users` SET `token`=? WHERE `username`=?", (new_token, username))
+            return build_response(301, headers={"Set-Cookie": f"token={new_token}", "Location": "/"})
+    return build_response(401)
 
 
 def protected() -> callable:
@@ -88,3 +91,7 @@ def protected() -> callable:
         return wrapper
 
     return decorator
+
+
+def deauth_user():
+    return b"HTTP/1.1 301 Moved Permanently\r\nSet-Cookie: token=; Max-Age=0\r\nLocation: /\r\n\r\n"
