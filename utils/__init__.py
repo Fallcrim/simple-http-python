@@ -32,7 +32,7 @@ def parse_message(message: bytes, sender: socket.socket, sender_addr: tuple) -> 
 
 
 def build_response(status_code: int, headers: dict = None, body: bytes | str = "") -> bytes:
-    """Builds a HTTP response.
+    """Builds an HTTP response.
 
     Args:
         status_code (int): HTTP status code
