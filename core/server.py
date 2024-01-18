@@ -1,7 +1,8 @@
 import socket
 import logging
 from threading import Thread
-from core.models import HTTPResponse
+
+import jinja2
 
 from utils import parse_message, build_response
 from core import HTTPRequest
@@ -17,6 +18,7 @@ class Webserver:
         self.connected_clients = []
         self._routes = {}
         self.config = {}
+        self._jinja_env = None
 
     def run(self, host: str = "localhost", port: int = 8000) -> None:
         """Starts the Webserver
@@ -28,6 +30,7 @@ class Webserver:
         self.server_socket: socket.socket = socket.create_server((host, port))
         self.server_socket.listen()
         self.logger.info(f"Listening on {host}:{port}")
+        self._jinja_env = jinja2.Environment(autoescape=True, loader=jinja2.FileSystemLoader("templates"))
         self.handle_requests()
 
     def handle_requests(self) -> None:
@@ -108,19 +111,5 @@ class Webserver:
             self._routes[path] = {"methods": allowed_methods, "callback": func}
             self.logger.debug(f"Registered route {path}")
             return func
-
-        return decorator
-
-    def auth_required() -> callable:
-        def decorator(func: callable) -> callable:
-            def wrapper(*args, **kwargs):
-                if not args[0].headers.get(b"Authorization"):
-                    args[0].logger.error("Authorization header not found")
-                    args[1].send(b"HTTP/1.1 401 Unauthorized\r\n\r\n")
-                    args[1].close()
-                    return
-                return func(*args, **kwargs)
-
-            return wrapper
 
         return decorator

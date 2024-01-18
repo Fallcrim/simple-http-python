@@ -3,7 +3,7 @@ import logging
 import socket
 
 from core import HTTPRequest, HTTPResponse
-
+from utils import globals
 
 status_messages = {
     200: "OK",
@@ -65,7 +65,7 @@ def load_page(path: str) -> bytes:
             return build_response(status_code=200, headers={"Content-Type": "text/html"}, body=f.read())
     except FileNotFoundError:
         return build_response(404)
-    
+
 
 def redirect(location: str) -> bytes:
     """Redirects to a location.
@@ -102,4 +102,20 @@ def get_cookies(headers: dict) -> dict:
     Returns:
         dict: Cookies
     """
-    return {cookie.decode().split("=")[0]: cookie.decode().split("=")[1] for cookie in headers.get(b"Cookie", b"").split(b";") if cookie != b""}
+    return {cookie.decode().split("=")[0]: cookie.decode().split("=")[1] for cookie in
+            headers.get(b"Cookie", b"").split(b";") if cookie != b""}
+
+
+def render_template(template: str, **kwargs) -> str:
+    """Render a template.
+
+    Args:
+        template (str): Template to render
+        **kwargs: Arguments to pass to the template
+
+    Returns:
+        str: Rendered template
+    """
+    app = globals.server_object
+    template = app.jinja_env.get_template(template)
+    return template.render(**kwargs)
