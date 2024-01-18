@@ -2,9 +2,8 @@ import sqlite3
 import hashlib
 import uuid
 
-from . import build_response
 from utils.database import Database
-from utils import get_cookies, build_response
+from utils import build_response
 
 
 def compare_passwords(password: str, hashed_password: str) -> bool:
@@ -79,7 +78,7 @@ def auth_user(username: str, password: str) -> bytes:
 def protected() -> callable:
     def decorator(func: callable) -> callable:
         def wrapper(*args, **kwargs):
-            cookies = get_cookies(args[0].headers)
+            cookies = args[0].cookies
             if cookies.get('token'):
                 db = Database("users.db")
                 if not db.validate_token(cookies["token"]):

@@ -1,5 +1,6 @@
 from dataclasses import dataclass
-import logging
+
+from utils import get_cookies
 
 
 @dataclass
@@ -11,6 +12,10 @@ class HTTPRequest:
     headers: dict
     body: bytes
     source: tuple = None
+    cookies: dict = None
+
+    def __post_init__(self):
+        self.cookies = get_cookies(self.headers)
 
 
 @dataclass
